@@ -8,6 +8,6 @@ I use OpenHAB and the 'things', 'items', 'rules' and 'sitemape' files are includ
 
 The hardware used is Wemos D1 Mini; RS485 data converter; 15V power supply
 
-Credits
+## Credits
 
 This code is largely based on the work of cribskip (https://github.com/cribskip/esp8266_spa). I have improved the hardware, added a web interface, restructured the code slightly and a few other tweaks but the protocol handling is all his
