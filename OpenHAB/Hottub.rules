@@ -1,0 +1,118 @@
+val Timer HotTubWatchdog = NULL // Hottub Watchdog
+
+//Set Hot Tub Time when Hot Tub powers up
+rule "Hot Tub powers up"
+when
+	Item HotTubConfig received update
+then
+	var MinutesOfDay = now.getHour() * 60 + now.getMinute()
+	HotTubTimeSet.sendCommand(MinutesOfDay.toString) // Send minutes since midnight
+end
+
+rule "Set clock at Midnight Everyday"
+when
+	Time is midnight
+then
+	var MinutesOfDay = now.getHour() * 60 + now.getMinute()
+	HotTubTimeSet.sendCommand(MinutesOfDay.toString) // Send minutes since midnight
+end
+
+rule "Hot tub Set Light Colour"
+when
+	Item HotTubLightColourSwitch received command ON
+then
+	logInfo('Hot Tub Light', 'Light On Triggered')
+	var i = 5
+	if (HotTubLightColour.state == "Sequence" ) i = 0
+	else if (HotTubLightColour.state == "Disco" ) i = 1
+	else if (HotTubLightColour.state == "Strobe" ) i = 2
+	else if (HotTubLightColour.state == "Green" ) i = 3
+	else if (HotTubLightColour.state == "Blue" ) i = 4
+	else if (HotTubLightColour.state == "Red" ) i = 5
+	else if (HotTubLightColour.state == "White" ) i = 6
+	HotTubLight.sendCommand("ON")
+	
+	while (i > 0) {
+		Thread::sleep(1000)	
+		logInfo('Hot Tub Light', 'Light Delay off')
+		HotTubLight.sendCommand("OFF")
+		Thread::sleep(1000)	
+		logInfo('Hot Tub Light', 'Light Delay on')
+		HotTubLight.sendCommand("ON")
+		i=i-1
+	}
+end
+
+rule "Hot tub Turn Off Light Colour"
+when
+	Item HotTubLightColourSwitch received command OFF
+then
+	logInfo('Hot Tub Light', 'Light Colour Off Triggered')
+	HotTubLight.sendCommand("OFF")
+end
+
+rule "Hot Tub set to low"
+when
+	Time cron "0 0 22 ? * * *"
+then
+	HotTubHighRange.sendCommand("LOW") 
+end
+
+rule "Hot Tub Lights Off"
+when
+	Time cron "0 0 23 ? * * *"
+then
+	HotTubLight.sendCommand("OFF") 
+	HotTubLightColourSwitch.sendCommand("OFF")
+end
+
+// rule "Hot Tub Accum Daily Energy"
+// when
+//	Time cron "0 5 0 ? * *"
+// then
+//	var ene = HotTubMonthlyEnergy.state as Number
+//	var pow = Float::parseFloat(String::format("%s",TuyaTasSw04Yesterday.state).replace(' ',''))
+//	var acc = ene + pow
+//	logInfo('Hot Tub Accum Daily Energy', 'Today = '+pow+' acc1= '+ene+' acc2 = '+acc)
+//	HotTubMonthlyEnergy.sendCommand(acc)
+// end
+
+// rule "Hot Tub Reset Accum Energy"
+// when
+//	Time cron "0 15 0 1 * ?"
+// then
+//	logInfo('Hot Tub Reset Accum Energy', 'Monthly Energy Updated')
+//	HotTubLastMonthEnergy.sendCommand(HotTubMonthlyEnergy.state as Number)
+//	HotTubMonthlyEnergy.sendCommand(0)
+// end
+
+//rule "Hot Tub Test rule"
+//when
+//	Time cron "0 0/5 * ? * *"
+//then
+//	var ene = HotTubMonthlyEnergy.state as Number
+//	var pow = Float::parseFloat(String::format("%s",TuyaTasSw04Today.state).replace(' ',''))
+//	var acc = ene + pow
+//	logInfo('Hot Tub Test', 'Power = '+pow+' ene= '+ene+' acc = '+acc)
+//	HotTubMonthlyEnergy.sendCommand(acc)
+//end
+
+rule "HotTub Watchdog"
+when
+	Item HotTubTime received update
+then
+
+	if (HotTubWatchdog == NULL) {
+		HotTubWatchdog = createTimer(now.plusSeconds(150), [ 
+		// if this timer ever expires then no Temp MQTT message has arrived
+		logInfo('Hottub Watchdog', 'Expired')
+		HotTubTemperatureCommand.sendCommand(0)
+		HotTubTargetTempCommand.sendCommand(0)
+		HotTubTimeCommand.sendCommand("N/A")
+		])
+	}
+	else {
+		HotTubWatchdog.reschedule(now.plusSeconds(150))
+	}
+end
+

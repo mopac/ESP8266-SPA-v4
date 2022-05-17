@@ -1,0 +1,110 @@
+Bridge mqtt:broker:MyMqttBroker "RM Mosquitto MQTT Broker" @ "MQTT" [ 
+  host="localhost",
+  secure=false,
+  port=1883,
+  qos=0,
+  retain=false,
+  clientid="Oh2Mqtt2Thing",
+  //certificate="",
+  //certificatepin=false,
+  //publickey="",
+  //publickeypin=false,
+  keep_alive_time=30000,
+  reconnect_time=60000,
+  //lastwill_message="",
+  //lastwill_qos=1,
+  //lastwill_topic="",
+  username="mymqttuser",
+  password="mymqttpass"
+]
+{
+	
+    // Hot Tub
+    Thing topic HotTub "Hot Tub MQTT" @ "MQTT"  {
+      Channels:
+          Type number : Temperature "Temperature" [
+			stateTopic="Spa/temperature/state"
+		]
+          Type number : TargetTemp "Target Temp" [
+			stateTopic="Spa/target_temp/state",
+			commandTopic="Spa/target_temp/set"
+		]
+          Type string : Time "Time" [
+			stateTopic="Spa/time/state"
+		]
+          Type string : TimeSet "Time Set" [
+			commandTopic="Spa/time/set"
+		]
+          Type string : HeatingMode "Heating Mode" [
+			stateTopic="Spa/heatingmode/state",
+			commandTopic="Spa/heatingmode/set"
+
+		]
+		  Type string : HeatMode "Heat Mode" [
+			commandTopic="Spa/Test/set"
+		]
+		  Type string : HeatState "Heat State" [
+			stateTopic="Spa/heatstate/state"
+		]
+		  Type string : HighRange "High Range" [
+			stateTopic="Spa/highrange/state",
+			commandTopic="Spa/highrange/set"
+		]
+		  Type string : Jet1 "Jet 1" [
+			stateTopic="Spa/jet_1/state"
+		]	
+		  Type string : Jet2 "Jet 2" [
+			stateTopic="Spa/jet_2/state"
+		]	
+		  Type string : Circ " Circulation Pump" [
+			stateTopic="Spa/circ/state"
+		]	
+		  Type string : Blower "Blower" [
+			stateTopic="Spa/blower/state"
+		]	
+		  Type string : Light "Light" [
+			stateTopic="Spa/light/state",
+			commandTopic="Spa/light/set"
+		]	
+		  Type string : Relay1 "Relay 1" [
+			stateTopic="Spa/relay_1/state"
+		]	
+		  Type string : Relay2 "Relay 2" [
+			stateTopic="Spa/relay_2/state"
+		]	
+		  Type string : Config "Config" [
+			stateTopic="Spa/config/status"
+		]
+		  Type string : FaultMsg "Fault Message" [
+			stateTopic="Spa/fault/Message"
+		]
+          Type number : FaultDaysAgo "Fault Days Ago" [
+			stateTopic="Spa/fault/DaysAgo"
+		]
+          Type number : FaultHours "Fault Hours" [
+			stateTopic="Spa/fault/Hours"
+		]
+          Type number : FaultMinutes "Fault Minutes" [
+			stateTopic="Spa/fault/Minutes"
+		]
+          Type string : OperatingMode "Operating Mode" [
+			commandTopic="Spa/opmode/set",
+			stateTopic="Spa/opmode/state"
+		]
+          Type number : TemperatureCommand "Temperature Command" [
+			commandTopic="Spa/temperature/state"
+		]
+          Type number : TargetTempCommand "Target Temp Command" [
+			commandTopic="Spa/target_temp/state"
+		]
+          Type string : TimeCommand "Time Command" [
+			commandTopic="Spa/time/state"
+		]
+
+    }    
+			
+}    
+
+
+
+
