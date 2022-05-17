@@ -10,4 +10,6 @@ The hardware used is Wemos D1 Mini; RS485 data converter; 15V power supply
 
 ## Credits
 
-This code is largely based on the work of cribskip (https://github.com/cribskip/esp8266_spa). I have improved the hardware, added a web interface, restructured the code slightly and a few other tweaks but the protocol handling is all his
+This code is largely based on the work of cribskip (https://github.com/cribskip/esp8266_spa). I have improved the hardware, added a web interface, restructured the code slightly and a few other tweaks but the protocol handling is all his.
+
+And the great work here (https://github.com/ccutrer/balboa_worldwide_app/wiki) to reverse engineer the bilboa bus protocol
