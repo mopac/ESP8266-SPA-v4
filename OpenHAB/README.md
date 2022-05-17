@@ -8,3 +8,5 @@ These files allow Openhab to connect to the MQTT data.
 * 'items' defines variables that connect to the 'things'.
 * 'rules' defines scripts to provide automation
 * 'sitemap' defines the human interface
+
+![openHAB sitemap image](images/OpenHAB Hottub sitemap.png)
