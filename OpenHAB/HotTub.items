@@ -1,0 +1,33 @@
+// Hot Tub Items
+
+Number HotTubTemperature "Hot Tub Temperature" {channel="mqtt:topic:MyMqttBroker:HotTub:Temperature"}
+Number HotTubTargetTemp "Hot Tub Target Temperature" {channel="mqtt:topic:MyMqttBroker:HotTub:TargetTemp"}
+String HotTubTime "Hot Tub time" {channel="mqtt:topic:MyMqttBroker:HotTub:Time"}
+
+Number HotTubTemperatureCommand "Hot Tub Temperature Command" {channel="mqtt:topic:MyMqttBroker:HotTub:TemperatureCommand"}
+Number HotTubTargetTempCommand "Hot Tub Target Temperature Command" {channel="mqtt:topic:MyMqttBroker:HotTub:TargetTempCommand"}
+String HotTubTimeCommand "Hot Tub time Command" {channel="mqtt:topic:MyMqttBroker:HotTub:TimeCommand"}
+
+String HotTubTimeSet "Hot Tub time Set" {channel="mqtt:topic:MyMqttBroker:HotTub:TimeSet"}
+String HotTubConfig "Hot Tub Config" {channel="mqtt:topic:MyMqttBroker:HotTub:Config"}
+String HotTubHeatingMode "Hot Tub Heating Mode" {channel="mqtt:topic:MyMqttBroker:HotTub:HeatingMode"}
+String HotTubHeatMode "Hot Tub Heat Mode" {channel="mqtt:topic:MyMqttBroker:HotTub:HeatMode"}
+String HotTubHeatState "Hot Tub Heat State" {channel="mqtt:topic:MyMqttBroker:HotTub:HeatState"}
+String HotTubHighRange "Hot Tub High Range" {channel="mqtt:topic:MyMqttBroker:HotTub:HighRange"}
+String HotTubJet1 "Hot Tub Jet 1" {channel="mqtt:topic:MyMqttBroker:HotTub:Jet1"}
+String HotTubJet2 "Hot Tub Jet 2" {channel="mqtt:topic:MyMqttBroker:HotTub:Jet2"}
+String HotTubCirc "Hot Tub Circulation Pump" {channel="mqtt:topic:MyMqttBroker:HotTub:Circ"}
+String HotTubBlower "Hot Tub Blower" {channel="mqtt:topic:MyMqttBroker:HotTub:Blower"}
+String HotTubLight "Hot Tub Light" {channel="mqtt:topic:MyMqttBroker:HotTub:Light"}
+String HotTubRelay1 "Hot Tub Relay 1" {channel="mqtt:topic:MyMqttBroker:HotTub:Relay1"}
+String HotTubRelay2 "Hot Tub Relay 2" {channel="mqtt:topic:MyMqttBroker:HotTub:Relay2"}
+String HotTubFaultMessage "Hot Tub Fault Message" {channel="mqtt:topic:MyMqttBroker:HotTub:FaultMsg"}
+Number HotTubFaultDaysAgo "Hot Tub Fault Days Ago" {channel="mqtt:topic:MyMqttBroker:HotTub:FaultDaysAgo"}
+Number HotTubFaultHours "Hot Tub Fault Hours" {channel="mqtt:topic:MyMqttBroker:HotTub:FaultHours"}
+Number HotTubFaultMinutes "Hot Tub Fault Minutes" {channel="mqtt:topic:MyMqttBroker:HotTub:FaultMinutes"}
+String HotTubOperatingMode "Hot Tub Operating Mode" {channel="mqtt:topic:MyMqttBroker:HotTub:OperatingMode"}
+String HotTubLightColour
+String HotTubLightColourSwitch
+Number HotTubMonthlyEnergy
+Number HotTubLastMonthEnergy
+

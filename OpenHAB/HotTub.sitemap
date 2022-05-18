@@ -1,0 +1,25 @@
+sitemap HotTub label="Hot Tub"
+ {	
+	Frame label="Hot Tub" {
+		Text item=HotTubTemperature label="Temperature [%.1f °C]" icon=temperature
+        Setpoint item=HotTubTargetTemp label="Target Temperature [%.1f °C]" minValue=10 maxValue=40 step=0.5 icon=heating		
+		Text item=HotTubTime label="Time [%s]" icon=time
+		Switch item=HotTubHeatingMode label="Heating Mode [%s] " mappings=[REST="REST", READY="READY"]
+		Text item=HotTubHeatState label="Heat State [%s]" icon=fire
+		Switch item=HotTubHighRange label="Temperature Range [%s]" mappings=[LOW="LOW",HIGH="HIGH"]
+		Text item=HotTubJet1 label="Jet 1 [%s]" icon=pump
+		Text item=HotTubCirc label="Circulation Pump [%s]" icon=flow
+		Switch item=HotTubLight label="Light [%s]" icon=light
+		Selection item=HotTubLightColour label="Light Colour " mappings=[Sequence="Sequence", Disco="Disco", Strobe="Strobe", Green="Green", Blue="Blue", Red="Red"]
+		Switch item=HotTubLightColourSwitch label="Light Colour Switch"
+		Text item=HotTubFaultMessage label="Last Fault Message [%s]"
+		Text item=HotTubFaultDaysAgo label="Last Fault Days Ago [%s]"
+		Text item=HotTubFaultHours label="Last Fault Hours [%s]"
+		Text item=HotTubFaultMinutes label="Last Fault Minutes [%s]"
+		Switch item=HotTubOperatingMode label="Operating Mode [%s] " mappings=[RUN="RUN", HOLD="HOLD"]
+//		Text item=TuyaTasSw04Yesterday label="Energy Yesterday [%s kWHours]"
+//		Text item=TuyaTasSw04Today label="Energy Today [%s kWHours]"
+//		Setpoint item=HotTubMonthlyEnergy label="Accumulated Daily Energy [%.2f kWHours]"
+//		Setpoint item=HotTubLastMonthEnergy label="Last Month Energy [%.1f kWHours]"
+	}
+}
