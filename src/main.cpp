@@ -179,7 +179,7 @@ void setup() {
     if (!MDNS.begin(DomainName, WiFi.softAPIP())) {
     SERUSB.println("[ERROR] MDNS responder did not setup");
     } else {
-      SERUSB.println("[INFO] MDNS setup is successful!");
+      SERUSB.printf("[INFO] MDNS setup is successful! Domain Name: %s.local\n", DomainName);
     }
   }
   else { // Connected successfully
@@ -187,8 +187,9 @@ void setup() {
     SERUSB.println("Connection established!");  
     SERUSB.print("IP address:\t");
     SERUSB.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer  
-    SERUSB.println("Starting MDNS");  
-    if(!MDNS.begin(DomainName, WiFi.localIP())) SERUSB.printf("\nmDNS failed to start");
+    SERUSB.print("Starting MDNS..........");  
+    if(!MDNS.begin(DomainName, WiFi.localIP())) SERUSB.printf("[ERROR] mDNS failed to start\n");
+    else SERUSB.printf("successful. Domain Name: %s.local\n", DomainName);
   }
 
   SERUSB.println("Starting updater");  
