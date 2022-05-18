@@ -17,7 +17,8 @@ And the great work here (https://github.com/ccutrer/balboa_worldwide_app/wiki) t
 # Hardware
 
 The software is designed to run on a WEMOS D1 Mini (https://www.wemos.cc/en/latest/d1/d1_mini.html). It will also run on WEMOS D1 Mini Pro. The Pro has the advantage that it can be configured to use an external antenna. The external antenna means it has better range for connecting to wifi. Generally your hottub is in the garden not too close to your wifi access point so extended range is essential.
-![WEMOS D1 Mini Pro image](/images/wemos-d1-mini-pro.jpg)
+
+<img src="/images/wemos-d1-mini-pro.jpg" width="400">
 
 The Balboa controller uses a 15V DC power bus; whereas the WEMOS D1 Mini requires 5V. A 15V to 5V DC-DC converter is required to power the WEMOS D1 mini from the Balboa power bus. I use the WEMOS Power Shield (https://www.wemos.cc/en/latest/d1_mini_shield/dc_power.html). It is exactly the same size as the D1 Mini with exactly the same pinout; so is very simple to connect.
 
