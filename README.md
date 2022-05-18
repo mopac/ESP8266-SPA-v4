@@ -30,4 +30,10 @@ The only minor issue is voltage levels. MAX485 interface is 5V whereas D1 Mini i
 
 ![MAX485 image](/images/RS485.png)
 
+# WEMOS D1 Mini Serial
 
+WEMOS D1 Mini has a single hardware UART for sending and receiving serial messages. This UART is available via pins GPIO1 (Tx) and GPIO3 (Rx). But the problem is that GPIO1 & GPIO3 are also connected to the Serial to USB converter. This USB interface allows the D1 Mini to be connected to the USB port of your laptop for flash programming and Serial.print() messages during debug. It is possible to connect the UART to the USB converter and the RS485 converter at the same time but this is very dependent on the D1 mini you are using. Some D1 Mini clones use a different USB converter or don't have the series resistors. So generally, sharing the pins is unreliable.
+
+A much more reliable solution is to use a feature of D1 Mini that swaps the Tx & Rx to pins GPIO13 & GPIO15. With this swap, there is no conflict between the USB converter and the RS485 converter. The RS485 converter connects to GPIO13 & GPIO15. The USB converter stays connected to GPIO1 & GPIO3.
+
+But with this swap, there is no hardware to send serial message to your laptop. The solution is to use SoftwareSerial! SoftwareSerial is a software library that can implement a software UART on any pair of the D1 Mini GPIO. So we configure SoftwareSerial to use GPIO1 & GPIO3, where the USB converter is connected. Then we send all debug serial messages via SoftwareSerial. Because SoftwareSerial is 'bit-bashing' the serial messages, it is advisable to run at a slower baudrate that is possible with the hardware UART. I use SoftwareSerial at
