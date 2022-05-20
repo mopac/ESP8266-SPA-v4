@@ -38,3 +38,10 @@ A much more reliable solution is to use a feature of D1 Mini that swaps the Tx &
 But with this swap, there is no hardware to send serial message to your laptop. The solution is to use SoftwareSerial! SoftwareSerial is a software library that can implement a software UART on any pair of the D1 Mini GPIO. So we configure SoftwareSerial to use GPIO1 & GPIO3, where the USB converter is connected. Then we send all debug serial messages via SoftwareSerial. Because SoftwareSerial is 'bit-bashing' the serial messages, it is advisable to run at a slower baudrate that is possible with the hardware UART. I use SoftwareSerial at 57600 baud, which seems pretty reliable; also the odd error in a debug message is unlikely to be a problem.
 
 It is possible to use SoftwareSerial to drive the RS485 converter directly without the swap feature. But the 115200 baud required for the RS485 connection is at the limit of SoftwareSerial's performance. I found too many bus error with the hottub. Swap is much more robust.
+
+## WEMOS D1 Mini Fails to Boot
+
+One little tweek using the RS485 converter connected to GPIO13 & GPIO15 on the D1 Mini, is that GPIO15 has to be pulled low during boot to allow D1 Mini to boot correclty.
+The RS485 converter has a 10k pullup on the DI pin. This prevents WEMOD D1 Mini from booting.
+The solution is to remove R4 on the RS485 board
+
