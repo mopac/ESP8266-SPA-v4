@@ -45,3 +45,10 @@ One little tweek using the RS485 converter connected to GPIO13 & GPIO15 on the D
 The RS485 converter has a 10k pullup on the DI pin. This prevents WEMOD D1 Mini from booting.
 The solution is to remove R4 on the RS485 board
 
+<img src="/images/RS485_close.jpg" width="400">
+
+# Schematic
+
+<img src="/images/Schematic.png" width="800">
+The Powersheild is not shown in this diagram because this is a diagram for the PCB I made and the Power shield connects to the D1 Mini pins and picks up 15V DC from TP1. So no connections on the PCB; just that flying lead from TP1
+
