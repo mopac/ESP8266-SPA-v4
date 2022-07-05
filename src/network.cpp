@@ -14,6 +14,7 @@ extern struct ConnectType Connect;
 extern String AP_NamePrefix;
 extern uint8_t last_state_crc;
 extern uint8_t send;
+extern uint8_t testSend;
 extern uint8_t settemp;
 extern uint8_t CurrentMins;
 extern uint8_t CurrentHours;
@@ -28,6 +29,8 @@ extern PubSubClient mqtt;
 extern SoftwareSerial swSer1;
 extern void _yield();
 extern void hardreset();
+// extern void setGlobals(uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4 );
+// extern void callback(char* p_topic, byte * p_payload, unsigned int p_length);
 
 
 
@@ -35,7 +38,7 @@ static const char rootMessage[] PROGMEM = R"=====(
 <!DOCTYPE html>
 <html>
 <body>
-<h2>Hot Tub WIFI Setup</h2>
+<h2>%s WIFI Setup</h2>
 <form action="/setup" method="POST">
   <label for="ssid">WIFI SSID:</label><br>
   <input type="text" id="ssid" name="ssid" value="%s" size="20"><br>
@@ -62,7 +65,7 @@ static const char rootMessage[] PROGMEM = R"=====(
 
 // function to show which device it is on web server
 void handleRoot() {
-char rootMessBuf[sizeof(rootMessage)+150];
+char rootMessBuf[sizeof(rootMessage)+200];
 char brokerMess[80];
   loopbackEnable = false; // turn off loopback mode
   if(mqtt.connected()) {
@@ -70,7 +73,7 @@ char brokerMess[80];
   } else {
     strcpy(brokerMess, "<p style=\"color:Red;\">[ERROR] MQTT Client NOT connected to Broker</p>");
   }
-  sprintf(rootMessBuf, rootMessage, Connect.ssid, Connect.brokerAddress, Connect.brokerUserid, Connect.brokerPassword, brokerMess);
+  sprintf(rootMessBuf, rootMessage, MQTT_TOPIC ,Connect.ssid, Connect.brokerAddress, Connect.brokerUserid, Connect.brokerPassword, brokerMess);
   httpServer.send(200, "text/html", rootMessBuf);
 }
 
@@ -267,84 +270,5 @@ void reconnect() {
   mqtt.publish(MQTT_TOPIC"/node/debug", "Connected to MQTT Broker");
 }
 
-// function called when a MQTT message arrived
-void callback(char* p_topic, byte * p_payload, unsigned int p_length) {
-  // concat the payload into a string
-  String payload;
-  for (uint8_t i = 0; i < p_length; i++) {
-    payload.concat((char)p_payload[i]);
-  }
-  String topic = String(p_topic);
 
-  mqtt.publish(MQTT_TOPIC"/node/debug", topic.c_str());
-  _yield();
 
-  // handle message topic
-  if (topic.startsWith(MQTT_TOPIC"/relay_")) {
-    bool newstate = 0;
-
-    if (payload.equals("ON")) newstate = LOW;
-    else if (payload.equals("OFF")) newstate = HIGH;
-
-    if (topic.charAt(10) == '1') {
-      pinMode(RLY1, INPUT);
-      delay(25);
-      pinMode(RLY1, OUTPUT);
-      digitalWrite(RLY1, newstate);
-    }
-    else if (topic.charAt(10) == '2') {
-      pinMode(RLY2, INPUT);
-      delay(25);
-      pinMode(RLY2, OUTPUT);
-      digitalWrite(RLY2, newstate);
-    }
-  } else if (topic.equals(MQTT_TOPIC"/command")) {
-    if (payload.equals("reset")) hardreset();
-  } else if (topic.equals(MQTT_TOPIC"/heatingmode/set")) {
-    if (payload.equals("READY") && SpaState.restmode == 1) send = 0x51; // toggle to READY
-    else if (payload.equals("REST") && SpaState.restmode == 0) send = 0x51; //toggle to REST
-  } else if (topic.equals(MQTT_TOPIC"/heat_mode/set")) {
-    if (payload.equals("heat") && SpaState.restmode == 1) send = 0x51; // ON = Ready; OFF = Rest
-    else if (payload.equals("off") && SpaState.restmode == 0) send = 0x51;
-  } else if (topic.equals(MQTT_TOPIC"/light/set")) {
-    if (payload.equals("ON") && SpaState.light == 0) send = 0x11;
-    else if (payload.equals("OFF") && SpaState.light == 1) send = 0x11;
-
-  } else if (topic.equals(MQTT_TOPIC"/aux1/set")) {
-    send = 0x16;
-    mqtt.publish(MQTT_TOPIC"/node/debug", "aux1 set 0x16");
-  } else if (topic.equals(MQTT_TOPIC"/aux2/set")) {
-    send = 0x17;
-    mqtt.publish(MQTT_TOPIC"/node/debug", "aux2 set 0x17");
-  } else if (topic.equals(MQTT_TOPIC"/jet_1/set")) {
-    if (payload.equals("ON") && SpaState.jet1 == 0) send = 0x04;
-    else if (payload.equals("OFF") && SpaState.jet1 == 1) send = 0x04;
-  } else if (topic.equals(MQTT_TOPIC"/jet_2/set")) {
-    if (payload.equals("ON") && SpaState.jet2 == 0) send = 0x05;
-    else if (payload.equals("OFF") && SpaState.jet2 == 1) send = 0x05;
-  } else if (topic.equals(MQTT_TOPIC"/blower/set")) {
-    if (payload.equals("ON") && SpaState.blower == 0) send = 0x0C;
-    else if (payload.equals("OFF") && SpaState.blower == 1) send = 0x0C;
-  } else if (topic.equals(MQTT_TOPIC"/highrange/set")) {
-    if (payload.equals("HIGH") && SpaState.highrange == 0) send = 0x50; // toggle to HIGH
-    else if (payload.equals("LOW") && SpaState.highrange == 1) send = 0x50; // toggle to LOW
-  } else if (topic.equals(MQTT_TOPIC"/target_temp/set")) {
-    // Get new set temperature
-    double d = payload.toDouble();
-    if (d > 0) d *= 2; // Convert to internal representation
-    settemp = d;
-    send = 0xff; // Marker to show 'Set Temp'
-  } else if (topic.equals(MQTT_TOPIC"/time/set")) {
-    // Get new time
-    int16_t CurrentTime = payload.toInt(); // Minutes from midnight
-    CurrentHours = CurrentTime / 60;
-    CurrentMins = CurrentTime % 60;
-//    char msg[128];
-//    sprintf(msg,"Set Time Call: CurrentTime = %d, CurrentHours = %d, CurrentMins = %d", CurrentTime,CurrentHours,CurrentMins);
-//    mqtt.publish(MQTT_TOPIC"/node/debug", msg);
-    if ((CurrentHours < 24) && (CurrentMins < 60 )) send = 0xFE;  // Marker to show 'Set time'
-  }  else if (topic.equals(MQTT_TOPIC"/opmode/set")) {
-    if (payload.equals("HOLD") && SpaState.opmode == 0) send = 0x3c; // toggle to HOLD
-    else if (payload.equals("RUN") && SpaState.opmode == 2) send = 0x3c; // toggle to RUN    
-  }   
-}

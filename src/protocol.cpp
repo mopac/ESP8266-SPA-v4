@@ -3,11 +3,11 @@
 #include "bilboa_helper.h"
 #include <SoftwareSerial.h>
 
-extern CircularBuffer<uint8_t, 35> Q_in;
-extern CircularBuffer<uint8_t, 35> Q_out;
+extern CircularBuffer<uint8_t, 40> Q_in;
+extern CircularBuffer<uint8_t, 40> Q_out;
 extern PubSubClient mqtt;
 extern void _yield();
-extern void print_msg(CircularBuffer<uint8_t, 35> &data);
+extern void print_msg(CircularBuffer<uint8_t, 40> &data);
 extern uint8_t last_state_crc;
 extern uint8_t send;
 extern uint8_t settemp;
@@ -20,7 +20,7 @@ extern struct SpaConfigType SpaConfig;
 struct SpaFaultLogType SpaFaultLog;
 extern SoftwareSerial swSer1;
 
-uint8_t id;
+extern uint8_t id;
 
 
 void decodeFault() {
@@ -269,6 +269,7 @@ void protocolParser() {
 
     // Unregistered or yet in progress
     if (id == 0) {
+        mqtt.publish(MQTT_TOPIC"/node/debug", "protocolParser: ID = 0");
         if (Q_in[2] == 0xFE) print_msg(Q_in);
 
         // FE BF 02:got new client ID
@@ -276,16 +277,25 @@ void protocolParser() {
             id = Q_in[5];
             if (id > 0x2F) id = 0x2F;
             SERUSB.println("Starting ID ack");  
+            mqtt.publish(MQTT_TOPIC"/node/debug", "Starting ID ack");
             ID_ack(id);
             SERUSB.println("ID ack complete");  
+            mqtt.publish(MQTT_TOPIC"/node/debug", "ID ack complete");
             mqtt.publish(MQTT_TOPIC"/node/id", String(id).c_str());
         }
 
         // FE BF 00:Any new clients?
         if (Q_in[2] == 0xFE && Q_in[4] == 0x00) {
+            mqtt.publish(MQTT_TOPIC"/node/debug", "Sending ID Request");
             ID_request();
         }
     } else if (Q_in[2] == id && Q_in[4] == 0x06) { // we have an ID, do clever stuff
+        if (send > 0) {
+          char temp[64];
+          sprintf(temp, "protocol: Start of the loop send = 0x%x", send);
+          mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+        }
+
         // id BF 06:Ready to Send
         if (send == 0xff) {
             // 0xff marks dirty temperature for now
@@ -293,6 +303,11 @@ void protocolParser() {
             Q_out.push(0xBF);
             Q_out.push(0x20);
             Q_out.push(settemp);
+            {
+              char temp[64];
+              sprintf(temp, "protocol: Dirty Temperature setTemp = 0x%x", settemp);
+              mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+            }
         } else if (send == 0xfe) {
             // 0xfe marks dirty time
             Q_out.push(id);
@@ -300,6 +315,11 @@ void protocolParser() {
             Q_out.push(0x21);
             Q_out.push(CurrentHours);
             Q_out.push(CurrentMins);
+            {
+              char temp[100];
+              sprintf(temp, "protocol: Dirty Time CurrentHours = 0x%x, CurrentHours = 0x%x", CurrentHours, CurrentMins);
+              mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+            }
         }else if (send == 0x00) {
             if (have_config == 0) { // Get configuration of the hot tub
                 Q_out.push(id);
@@ -327,6 +347,11 @@ void protocolParser() {
             }
         } else {
             // Send toggle commands
+            {
+              char temp[64];
+              sprintf(temp, "protocol: Send toggle command = 0x%x", send);
+              mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+            }
             Q_out.push(id);
             Q_out.push(0xBF);
             Q_out.push(0x11);

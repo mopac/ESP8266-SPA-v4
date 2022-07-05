@@ -20,7 +20,7 @@
 #define VERSION "0.40"
 
 // Define the top level topic used for all MQTT messages
-#define MQTT_TOPIC "Spa"
+#define MQTT_TOPIC "Swimspa"
 
 #define STRON String("ON").c_str()
 #define STROFF String("OFF").c_str()
@@ -72,4 +72,11 @@ struct ConnectType{
   char brokerAddress[20];
   char brokerUserid[20];
   char brokerPassword[20];
+};
+
+struct CallDataType{
+  unsigned char send :1;
+  unsigned char settemp :1;
+  unsigned char CurrentHours :1;
+  unsigned char CurrentMins :1;
 };

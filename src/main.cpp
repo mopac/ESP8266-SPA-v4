@@ -33,24 +33,6 @@ bool stationMode = true;
 #include <ESP8266HTTPUpdateServer.h>
 #include <ArduinoOTA.h>
 
-ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
-
-WiFiClient wifiClient;
-PubSubClient mqtt(wifiClient);
-
-SoftwareSerial swSer1;
-
-CircularBuffer<uint8_t, 35> Q_in;
-CircularBuffer<uint8_t, 35> Q_out;
-
-uint8_t last_state_crc = 0x00;
-uint8_t send = 0x00;
-uint8_t settemp = 0x00;
-uint8_t CurrentMins = 0;
-uint8_t CurrentHours = 0;
-uint8_t counter = 0;
-
 unsigned long lastrx = 0;
 unsigned long lastmdns = 0;
 unsigned long loopbackTime = 0;
@@ -63,8 +45,48 @@ char ip_settings = 0; //stages: 0-> want it; 1-> requested it; 2-> got it; 3-> f
 
 float loopbackValue = 0;
 
+uint8_t last_state_crc = 0x00;
+uint8_t id = 0x00;
+volatile uint8_t send = 0x00;
+volatile uint8_t testSend = 0;
+volatile uint8_t settemp = 0x00;
+volatile uint8_t CurrentMins = 0;
+volatile uint8_t CurrentHours = 0;
+volatile struct CallDataType callData;
+volatile struct CallDataType *callDataPtr = &callData;
+
 struct SpaStateType SpaState;
 struct SpaConfigType SpaConfig;
+
+CircularBuffer<uint8_t, 40> Q_in;
+CircularBuffer<uint8_t, 40> Q_out;
+
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
+
+WiFiClient wifiClient;
+PubSubClient mqtt(wifiClient);
+
+SoftwareSerial swSer1;
+
+void setGlobals(uint8_t v1, uint8_t v2, uint8_t v3, uint8_t v4 )
+{
+  send = v1;
+  CurrentHours = v2;
+  CurrentMins = v3;
+  settemp = v4;
+  callData.send = v1;
+  callData.CurrentHours = v2;
+  callData.CurrentMins = v3;
+  callData.settemp = v4;
+      {
+        char temp[128];
+        sprintf(temp, "main: setGlobals send = 0x%x settemp = %d CurrentHours = %d CurrentMins = %d", send, settemp, CurrentHours, CurrentMins);
+        mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+      }
+
+}
+
 
 void _yield() {
   yield();
@@ -73,7 +95,7 @@ void _yield() {
   MDNS.update();
 }
 
-void print_msg(CircularBuffer<uint8_t, 35> &data) {
+void print_msg(CircularBuffer<uint8_t, 40> &data) {
   String s;
   uint8_t x;
   //for (i = 0; i < (Q_in[1] + 2); i++) {
@@ -91,8 +113,103 @@ void print_msg(CircularBuffer<uint8_t, 35> &data) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void hardreset() {
+  SERUSB.println("Oh Dear! something has gone wrong");
+  SERUSB.flush();
+  delay(10);
   ESP.wdtDisable();
   while (1) {};
+}
+
+// function called when a MQTT message arrived
+void callback(char* p_topic, byte * p_payload, unsigned int p_length) {
+  // concat the payload into a string
+  String payload;
+  for (uint8_t i = 0; i < p_length; i++) {
+    payload.concat((char)p_payload[i]);
+  }
+  String topic = String(p_topic);
+
+  mqtt.publish(MQTT_TOPIC"/node/debug", topic.c_str());
+  _yield();
+
+  // handle message topic
+  if (topic.startsWith(MQTT_TOPIC"/relay_")) {
+    bool newstate = 0;
+
+    if (payload.equals("ON")) newstate = LOW;
+    else if (payload.equals("OFF")) newstate = HIGH;
+
+    if (topic.charAt(10) == '1') {
+      pinMode(RLY1, INPUT);
+      delay(25);
+      pinMode(RLY1, OUTPUT);
+      digitalWrite(RLY1, newstate);
+    }
+    else if (topic.charAt(10) == '2') {
+      pinMode(RLY2, INPUT);
+      delay(25);
+      pinMode(RLY2, OUTPUT);
+      digitalWrite(RLY2, newstate);
+    }
+  } else if (topic.equals(MQTT_TOPIC"/command")) {
+    if (payload.equals("reset")) hardreset();
+  } else if (topic.equals(MQTT_TOPIC"/heatingmode/set")) {
+    if (payload.equals("READY") && SpaState.restmode == 1) send = 0x51; // toggle to READY
+    else if (payload.equals("REST") && SpaState.restmode == 0) send = 0x51; //toggle to REST
+  } else if (topic.equals(MQTT_TOPIC"/heat_mode/set")) {
+    if (payload.equals("heat") && SpaState.restmode == 1) send = 0x51; // ON = Ready; OFF = Rest
+    else if (payload.equals("off") && SpaState.restmode == 0) send = 0x51;
+  } else if (topic.equals(MQTT_TOPIC"/light/set")) {
+    mqtt.publish(MQTT_TOPIC"/node/debug", "Set Light Send = 0x11");
+    if (payload.equals("ON") && SpaState.light == 0) send = 0x11;  
+    else if (payload.equals("OFF") && SpaState.light == 1) send = 0x11;
+  } else if (topic.equals(MQTT_TOPIC"/aux1/set")) {
+    send = 0x16;
+    mqtt.publish(MQTT_TOPIC"/node/debug", "aux1 set 0x16");
+  } else if (topic.equals(MQTT_TOPIC"/aux2/set")) {
+    send = 0x17;
+    mqtt.publish(MQTT_TOPIC"/node/debug", "aux2 set 0x17");
+  } else if (topic.equals(MQTT_TOPIC"/jet_1/set")) {
+    if (payload.equals("ON") && SpaState.jet1 == 0) send = 0x04;
+    else if (payload.equals("OFF") && SpaState.jet1 == 1) send = 0x04;
+  } else if (topic.equals(MQTT_TOPIC"/jet_2/set")) {
+    if (payload.equals("ON") && SpaState.jet2 == 0) send = 0x05;
+    else if (payload.equals("OFF") && SpaState.jet2 == 1) send = 0x05;
+  } else if (topic.equals(MQTT_TOPIC"/blower/set")) {
+    if (payload.equals("ON") && SpaState.blower == 0) send = 0x0C;
+    else if (payload.equals("OFF") && SpaState.blower == 1) send = 0x0C;
+  } else if (topic.equals(MQTT_TOPIC"/highrange/set")) {
+    if (payload.equals("HIGH") && SpaState.highrange == 0) send = 0x50; // toggle to HIGH
+    else if (payload.equals("LOW") && SpaState.highrange == 1) send = 0x50; // toggle to LOW
+  } else if (topic.equals(MQTT_TOPIC"/target_temp/set")) {
+    // Get new set temperature
+    double d = payload.toDouble();
+    if (d > 0) d *= 2; // Convert to internal representation
+    settemp = (uint8_t)d;
+    send = 0xff; // Marker to show 'Set Temp'
+  } else if (topic.equals(MQTT_TOPIC"/time/set")) {
+    // Get new time
+    int16_t CurrentTime = payload.toInt(); // Minutes from midnight
+    CurrentHours = (uint8_t)(CurrentTime / 60);
+    CurrentMins = (uint8_t)(CurrentTime % 60);
+    char msg[128];
+    sprintf(msg,"Set Time Call: CurrentTime = %d, CurrentHours = %d, CurrentMins = %d", CurrentTime,CurrentHours,CurrentMins);
+    mqtt.publish(MQTT_TOPIC"/node/debug", msg);
+    if ((CurrentHours < 24) && (CurrentMins < 60 )) send = 0xFE;  // Marker to show 'Set time'
+  }  else if (topic.equals(MQTT_TOPIC"/opmode/set")) {
+    if (payload.equals("HOLD") && SpaState.opmode == 0) send = 0x3c; // toggle to HOLD
+    else if (payload.equals("RUN") && SpaState.opmode == 2) send = 0x3c; // toggle to RUN    
+  }   
+  callData.send = send;
+  callData.CurrentHours = CurrentHours;
+  callData.CurrentMins = CurrentMins;
+  callData.settemp = settemp;
+    {
+      char temp[64];
+      sprintf(temp, "Callback: At the end of Callback Send = 0x%x", send);
+      mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+    }
+  // setGlobals(send, CurrentHours, CurrentMins, settemp);
 }
 
 
@@ -101,13 +218,15 @@ void hardreset() {
 
 void setup() {
 
+  RS485setup(); // Setup the RS485 interface in the disabled state
+
 #ifdef SWAP
   // Using hardware Serial for RS485 and software Serial for USB
   Serial.begin(115200);
   Serial.swap(); // Switch Hardware Serial to GPIO13 & GPIO15
 
-  swSer1.begin(57600,SWSERIAL_8N1, 3, 1, false); // Start software serial
-  swSer1.enableIntTx(false); // This is needed with high baudrates
+  swSer1.begin(19200,SWSERIAL_8N1, 3, 1, false); // Start software serial
+  // swSer1.enableIntTx(false); // This is needed with high baudrates
 
   if (!swSer1) { // If the object did not initialize, then its configuration is invalid
   Serial.swap(); //Switch the Serial back to 1 & 3
@@ -121,7 +240,7 @@ void setup() {
 #else
   // Using Software Serial for RS485 and Hardware Serial for USB
   // Spa communication, 115.200 baud 8N1
-  Serial.begin(57600);
+  Serial.begin(19200);
   
   swSer1.begin(115200,SWSERIAL_8N1, 13, 15, true);
   swSer1.enableIntTx(false);
@@ -142,16 +261,6 @@ void setup() {
 //  fsSetup(Connect.ssid, Connect.password, Connect.brokerAddress, Connect.brokerUserid, Connect.brokerPassword); //Read the wifi details from File System
   fsSetup(&Connect); //Read the wifi details from File System
 
-  RS485setup(); // Setup the RS485 interface
-
-  // give Spa time to wake up after POST
-  for (uint8_t i = 0; i < 5; i++) {
-    delay(1000);
-    yield();
-  }
-  SERUSB.println("5 second delay elapsed");
-  Q_in.clear();
-  Q_out.clear();
 
   // WiFi.setOutputPower(20.5); // this sets wifi to highest power
   WiFi.begin(Connect.ssid, Connect.password);
@@ -229,6 +338,18 @@ void setup() {
     mqtt.setSocketTimeout(20);
   }
 
+  // give Spa time to wake up after POST
+  for (uint8_t i = 0; i < 10; i++) {
+    delay(1000);
+    yield();
+  }
+  SERUSB.println("10 second delay elapsed");
+  Q_in.clear();
+  Q_out.clear();
+  while(SER485.available()) SER485.read(); // flush the receive buffer
+  delay(10);
+  RS485enableRx();
+
   loopbackTime = millis(); // start loopback timer
 
 }
@@ -266,8 +387,20 @@ void loop() {
         }
       }
     }
+//    if (send > 0) {
+//      char temp[128];
+//      sprintf(temp, "Main: Before Protocolparser is called send = 0x%x settemp = %d CurrentHours = %d CurrentMins = %d", send, settemp, CurrentHours, CurrentMins);
+//      mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+//    }
+
+//    if (callData.send > 1) {
+//      char temp[128];
+//      sprintf(temp, "Main: Before Protocolparser Structure send = 0x%x settemp = %d CurrentHours = %d CurrentMins = %d", callData.send, callData.settemp, callData.CurrentHours, callData.CurrentMins);
+//      mqtt.publish(MQTT_TOPIC"/node/debug", temp);
+//    }
     
     if (spaReceive()) { // Check if complete serial messages have arrived
+
       protocolParser();
     } 
 
@@ -283,9 +416,10 @@ void loop() {
     if ((millis() - loopbackTime > 3000) && (loopbackEnable == true)) { // loopback mode and 3 seconds has elasped
 
       loopbackTime = millis();
-      mqtt.publish(MQTT_TOPIC"/node/msg", "Sending ID Loopback"); 
+      mqtt.publish(MQTT_TOPIC"/node/debug", "Sending ID Loopback"); 
       SERUSB.printf("\nSending ID Loopback: Value:%2.1f\n",loopbackValue); 
-      spa_emulate();
+      if (id == 0x00) spa_emulate_id();
+      else spa_emulate_request();
       mqtt.publish(MQTT_TOPIC"/time/state", String(loopbackValue, 2).c_str());
       mqtt.publish(MQTT_TOPIC"/temperature/state", String(loopbackValue, 2).c_str());
       mqtt.publish(MQTT_TOPIC"/target_temp/state", String(loopbackValue, 2).c_str());
