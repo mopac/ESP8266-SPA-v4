@@ -20,7 +20,7 @@
 #define VERSION "0.40"
 
 // Define the top level topic used for all MQTT messages
-#define MQTT_TOPIC "Swimspa"
+#define MQTT_TOPIC "Spa"
 
 #define STRON String("ON").c_str()
 #define STROFF String("OFF").c_str()
