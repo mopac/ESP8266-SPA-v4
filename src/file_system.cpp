@@ -40,10 +40,17 @@ void writeFile(const char* filename, const char* value) {
 }
 
 void fsSetup(struct ConnectType *localConnect ) {
+  #if defined(ARDUINO_ARCH_ESP32)
+    if(!LittleFS.begin(true))  {                           // Start the SPI Flash Files System
+        SERUSB.printf("\nError: Filesystem failed to mount");
+        return;
+      }
+  #else
     if(!LittleFS.begin())  {                           // Start the SPI Flash Files System
         SERUSB.printf("\nError: Filesystem failed to mount");
         return;
       }
+  #endif
     if (!readFile("/ssid.txt", localConnect->ssid)) strcpy(localConnect->ssid, "your_ssid");
     if (!readFile("/password.txt", localConnect->password)) strcpy(localConnect->password, "your_passord");
     if (!readFile("/broker.txt", localConnect->brokerAddress)) strcpy(localConnect->brokerAddress, "your_broker");
