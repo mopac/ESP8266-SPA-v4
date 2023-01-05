@@ -12,8 +12,6 @@ void RS485setup(void) {
   // Begin RS485 in listening mode
   #ifndef AUTO_TX
 
-    pinMode(D4, OUTPUT);    // Set up the LED output
-    digitalWrite(D4, HIGH); // Turn the LED off
     pinMode(TX485_RE, OUTPUT);
     digitalWrite(TX485_RE, HIGH); // Receiver disabled
     pinMode(TX485_DE, OUTPUT);
@@ -23,6 +21,8 @@ void RS485setup(void) {
   
   #endif
 
+  pinMode(LED, OUTPUT);    // Set up the LED output
+  digitalWrite(LED, LED_OFF); // Turn the LED off
   pinMode(RLY1, OUTPUT);
   digitalWrite(RLY1, HIGH);
   pinMode(RLY2, OUTPUT);
@@ -58,7 +58,7 @@ uint8_t crc8(CircularBuffer<uint8_t, 40> &data) {
 
 void rs485_send(boolean loopback) {
 
-    digitalWrite(D4, LOW); // Turn the LED on
+    digitalWrite(LED, LED_ON); // Turn the LED on
 
   // The following is not required for the new RS485 chip
   #ifndef AUTO_TX
@@ -96,7 +96,7 @@ void rs485_send(boolean loopback) {
 
   // DEBUG: print_msg(Q_out);
   Q_out.clear();
-  digitalWrite(D4, HIGH); // Turn the LED off
+  digitalWrite(LED, LED_OFF); // Turn the LED off
 
 }
 

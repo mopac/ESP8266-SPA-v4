@@ -27,10 +27,18 @@ String AP_NamePrefix = MQTT_TOPIC" ";
 const char* DomainName = MQTT_TOPIC;  // set domain name domain.local
 bool stationMode = true;
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>   // Local WebServer used to serve the configuration portal
-#include <ESP8266mDNS.h>
-#include <ESP8266HTTPUpdateServer.h>
+#if defined(ARDUINO_ARCH_ESP32)
+  #include <WiFi.h>
+  #include <WebServer.h>   // Local WebServer used to serve the configuration portal
+  #include <ESPmDNS.h>
+  #include <HTTPUpdateServer.h>
+#else
+  #include <ESP8266WiFi.h>
+  #include <ESP8266WebServer.h>   // Local WebServer used to serve the configuration portal
+  #include <ESP8266mDNS.h>
+  #include <ESP8266HTTPUpdateServer.h>
+#endif
+
 #include <ArduinoOTA.h>
 
 unsigned long lastrx = 0;
@@ -61,8 +69,13 @@ struct SpaConfigType SpaConfig;
 CircularBuffer<uint8_t, 40> Q_in;
 CircularBuffer<uint8_t, 40> Q_out;
 
-ESP8266WebServer httpServer(80);
-ESP8266HTTPUpdateServer httpUpdater;
+#if defined(ARDUINO_ARCH_ESP32)
+  WebServer httpServer(80);
+  HTTPUpdateServer httpUpdater;
+#else
+  ESP8266WebServer httpServer(80);
+  ESP8266HTTPUpdateServer httpUpdater;
+#endif
 
 WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
@@ -92,7 +105,11 @@ void _yield() {
   yield();
   mqtt.loop();
   httpServer.handleClient();
-  MDNS.update();
+  #if defined(ARDUINO_ARCH_ESP32)
+
+  #else  
+    MDNS.update();
+  #endif
 }
 
 void print_msg(CircularBuffer<uint8_t, 40> &data) {
@@ -116,8 +133,12 @@ void hardreset() {
   SERUSB.println("Oh Dear! something has gone wrong");
   SERUSB.flush();
   delay(10);
-  ESP.wdtDisable();
-  while (1) {};
+  #if defined(ARDUINO_ARCH_ESP32)
+    esp_restart();
+  #else
+    ESP.wdtDisable();
+    while (1) {};
+  #endif
 }
 
 // function called when a MQTT message arrived
@@ -220,41 +241,49 @@ void setup() {
 
   RS485setup(); // Setup the RS485 interface in the disabled state
 
-#ifdef SWAP
-  // Using hardware Serial for RS485 and software Serial for USB
-  Serial.begin(115200);
-  Serial.swap(); // Switch Hardware Serial to GPIO13 & GPIO15
-
-  swSer1.begin(19200,SWSERIAL_8N1, 3, 1, false); // Start software serial
-  // swSer1.enableIntTx(false); // This is needed with high baudrates
-
-  if (!swSer1) { // If the object did not initialize, then its configuration is invalid
-  Serial.swap(); //Switch the Serial back to 1 & 3
-  Serial.println("");
-  Serial.println("Invalid SoftwareSerial pin configuration, check config"); 
-  }
-  else {
-  swSer1.println("");
-  swSer1.println("Correct SoftwareSerial pin configuration. Using Software Serial for USB");   
-  } 
+#if defined(ARDUINO_ARCH_ESP32)
+    // Using Serial1 for RS485 and Serial0 for USB
+    // Using Serial2 for Spa communication, 115.200 baud 8N1
+    SERUSB.begin(19200);
+    
+    SER485.begin(115200, SERIAL_8N1, TX485_RX, TX485_TX);
+   
 #else
-  // Using Software Serial for RS485 and Hardware Serial for USB
-  // Spa communication, 115.200 baud 8N1
-  Serial.begin(19200);
-  
-  swSer1.begin(115200,SWSERIAL_8N1, 13, 15, true);
-  swSer1.enableIntTx(false);
+  #ifdef SWAP
+    // Using hardware Serial for RS485 and software Serial for USB
+    Serial.begin(115200);
+    Serial.swap(); // Switch Hardware Serial to GPIO13 & GPIO15
 
-  if (!swSer1) { // If the object did not initialize, then its configuration is invalid
-  Serial.println("");
-  Serial.println("Invalid SoftwareSerial pin configuration, check config"); 
-  }
-  else {
-  Serial.println("");
-  Serial.println("Correct SoftwareSerial pin configuration. Using Software Serial for RS485");   
-  } 
+    swSer1.begin(19200,SWSERIAL_8N1, 3, 1, false); // Start software serial
+    // swSer1.enableIntTx(false); // This is needed with high baudrates
+
+    if (!swSer1) { // If the object did not initialize, then its configuration is invalid
+    Serial.swap(); //Switch the Serial back to 1 & 3
+    Serial.println("");
+    Serial.println("Invalid SoftwareSerial pin configuration, check config"); 
+    }
+    else {
+    swSer1.println("");
+    swSer1.println("Correct SoftwareSerial pin configuration. Using Software Serial for USB");   
+    } 
+  #else
+    // Using Software Serial for RS485 and Hardware Serial for USB
+    // Spa communication, 115.200 baud 8N1
+    Serial.begin(19200);
+    
+    swSer1.begin(115200,SWSERIAL_8N1, 13, 15, true);
+    swSer1.enableIntTx(false);
+
+    if (!swSer1) { // If the object did not initialize, then its configuration is invalid
+    Serial.println("");
+    Serial.println("Invalid SoftwareSerial pin configuration, check config"); 
+    }
+    else {
+    Serial.println("");
+    Serial.println("Correct SoftwareSerial pin configuration. Using Software Serial for RS485");   
+    } 
+  #endif
 #endif
-
   SERUSB.println("");
   SERUSB.println("ESP8266 SPA........Starting");
 
@@ -285,7 +314,9 @@ void setup() {
     WiFi.disconnect();  // Turn off station mode
     WiFi.mode(WIFI_AP);
     WiFi.softAP(getAPName().c_str());
-    if (!MDNS.begin(DomainName, WiFi.softAPIP())) {
+//    if (!MDNS.begin(DomainName, WiFi.softAPIP())) {
+    if (!MDNS.begin(DomainName)) {
+  
     SERUSB.println("[ERROR] MDNS responder did not setup");
     } else {
       SERUSB.printf("[INFO] MDNS setup is successful! Domain Name: %s.local\n", DomainName);
@@ -297,7 +328,8 @@ void setup() {
     SERUSB.print("IP address:\t");
     SERUSB.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer  
     SERUSB.print("Starting MDNS..........");  
-    if(!MDNS.begin(DomainName, WiFi.localIP())) SERUSB.printf("[ERROR] mDNS failed to start\n");
+//    if(!MDNS.begin(DomainName, WiFi.localIP())) SERUSB.printf("[ERROR] mDNS failed to start\n");
+    if(!MDNS.begin(DomainName)) SERUSB.printf("[ERROR] mDNS failed to start\n");
     else SERUSB.printf("successful. Domain Name: %s.local\n", DomainName);
   }
 

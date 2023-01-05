@@ -1,17 +1,36 @@
 
-#define TX485_RE D5  //Receiver Enable
-#define TX485_DE D6  //Driver Enable
-#define RLY1  D1
-#define RLY2  D2
-
-#define SWAP
-#ifdef SWAP
-  #define SERUSB swSer1
-  #define SER485 Serial
-#else
+#if defined(ARDUINO_ARCH_ESP32)
+  #define TX485_RE 22  //Receiver Enable
+  #define TX485_DE 19  //Driver Enable
+  #define RLY1  23
+  #define RLY2  33
+  #define LED   12
+  #define LED_ON HIGH
+  #define LED_OFF LOW
+  #define TX485_RX 32
+  #define TX485_TX 26
   #define SERUSB Serial
-  #define SER485 swSer1
+  #define SER485 Serial1
+
+#else
+  #define TX485_RE D5  //Receiver Enable
+  #define TX485_DE D6  //Driver Enable
+  #define RLY1  D1
+  #define RLY2  D2
+  #define LED   D4
+  #define LED_ON LOW
+  #define LED_OFF HIGH
+  #define SWAP
+  #ifdef SWAP
+    #define SERUSB swSer1
+    #define SER485 Serial
+  #else
+    #define SERUSB Serial
+    #define SER485 swSer1
 #endif
+#endif
+
+
 
 //HomeAssistant autodiscover
 // #define HASSIO

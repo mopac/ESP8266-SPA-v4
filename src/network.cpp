@@ -1,11 +1,24 @@
 #include <Arduino.h>
 #include "esp8266_spa.h"
 #include <SoftwareSerial.h>
+#include "network.h"
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>   // Local WebServer used to serve the configuration portal
-#include <ESP8266mDNS.h>
-#include <ESP8266HTTPUpdateServer.h>
+#if defined(ARDUINO_ARCH_ESP32)
+
+  #include <WiFi.h>
+  #include <WebServer.h>   // Local WebServer used to serve the configuration portal
+  #include <ESPmDNS.h>
+  #include <HTTPUpdateServer.h>
+
+#else
+
+  #include <ESP8266WiFi.h>
+  #include <ESP8266WebServer.h>   // Local WebServer used to serve the configuration portal
+  #include <ESP8266mDNS.h>
+  #include <ESP8266HTTPUpdateServer.h>
+
+#endif
+
 #include <ArduinoOTA.h>
 #include "file_system.h"
 
@@ -23,8 +36,11 @@ extern char have_faultlog;
 extern struct SpaStateType SpaState;
 extern struct SpaConfigType SpaConfig;
 
-
-extern ESP8266WebServer httpServer;
+#if defined(ARDUINO_ARCH_ESP32)
+  extern WebServer httpServer;
+#else
+  extern ESP8266WebServer httpServer;
+#endif
 extern PubSubClient mqtt;
 extern SoftwareSerial swSer1;
 extern void _yield();
@@ -199,8 +215,13 @@ void mqttpubsub() {
   //mqtt.publish(MQTT_TOPIC"/node/debug", String(millis()).c_str());
   //mqtt.publish(MQTT_TOPIC"/node/debug", String(oldstate).c_str());
   mqtt.publish(MQTT_TOPIC"/node/version", VERSION);
-  mqtt.publish(MQTT_TOPIC"/node/flashsize", String(ESP.getFlashChipRealSize()).c_str());
-  mqtt.publish(MQTT_TOPIC"/node/chipid", String(ESP.getChipId()).c_str());
+  #if defined(ARDUINO_ARCH_ESP32)
+    mqtt.publish(MQTT_TOPIC"/node/flashsize", String(ESP.getFlashChipSize()).c_str());
+    mqtt.publish(MQTT_TOPIC"/node/chipid", String(ESP.getChipModel()).c_str());
+  #else
+    mqtt.publish(MQTT_TOPIC"/node/flashsize", String(ESP.getFlashChipRealSize()).c_str());
+    mqtt.publish(MQTT_TOPIC"/node/chipid", String(ESP.getChipId()).c_str());
+  #endif
   mqtt.publish(MQTT_TOPIC"/node/speed", String(ESP.getCpuFreqMHz()).c_str());
 
   // ... and resubscribe
