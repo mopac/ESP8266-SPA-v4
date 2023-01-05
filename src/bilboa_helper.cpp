@@ -23,10 +23,10 @@ void RS485setup(void) {
 
   pinMode(LED, OUTPUT);    // Set up the LED output
   digitalWrite(LED, LED_OFF); // Turn the LED off
-  pinMode(RLY1, OUTPUT);
-  digitalWrite(RLY1, HIGH);
-  pinMode(RLY2, OUTPUT);
-  digitalWrite(RLY2, HIGH);
+//  pinMode(RLY1, OUTPUT);
+//  digitalWrite(RLY1, HIGH);
+//  pinMode(RLY2, OUTPUT);
+//  digitalWrite(RLY2, HIGH);
 
 }
 

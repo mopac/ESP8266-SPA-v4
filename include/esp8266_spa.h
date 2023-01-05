@@ -1,14 +1,14 @@
 
 #if defined(ARDUINO_ARCH_ESP32)
-  #define TX485_RE 22  //Receiver Enable
-  #define TX485_DE 19  //Driver Enable
+  #define TX485_RE 32  //Receiver Enable
+  #define TX485_DE 26  //Driver Enable
   #define RLY1  23
   #define RLY2  33
   #define LED   12
   #define LED_ON HIGH
   #define LED_OFF LOW
-  #define TX485_RX 32
-  #define TX485_TX 26
+  #define TX485_RX 22
+  #define TX485_TX 19
   #define SERUSB Serial
   #define SER485 Serial1
 

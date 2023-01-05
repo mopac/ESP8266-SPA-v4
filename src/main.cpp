@@ -239,13 +239,14 @@ void callback(char* p_topic, byte * p_payload, unsigned int p_length) {
 
 void setup() {
 
-  RS485setup(); // Setup the RS485 interface in the disabled state
+//  RS485setup(); // Setup the RS485 interface in the disabled state
 
 #if defined(ARDUINO_ARCH_ESP32)
     // Using Serial1 for RS485 and Serial0 for USB
     // Using Serial2 for Spa communication, 115.200 baud 8N1
     SERUSB.begin(19200);
-    
+    SERUSB.printf("\nDid we even get to the first line of code?????\n");
+    delay(1000);
     SER485.begin(115200, SERIAL_8N1, TX485_RX, TX485_TX);
    
 #else
