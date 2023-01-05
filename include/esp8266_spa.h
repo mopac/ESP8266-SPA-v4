@@ -35,7 +35,7 @@
 //HomeAssistant autodiscover
 // #define HASSIO
 
-// #define AUTO_TX //if your RS485 driver chip needs enables Tx automatically then uncomment this #define 
+#define AUTO_TX //if your RS485 driver chip enables Tx automatically then uncomment this #define 
 #define VERSION "0.50"
 
 // Define the top level topic used for all MQTT messages
